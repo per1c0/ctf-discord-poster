@@ -24,7 +24,20 @@ params = {
     "finish": future,
 }
 
-events = requests.get(CTFTIME_API, params=params, timeout=15).json()
+resp = requests.get(
+    CTFTIME_API,
+    params=params,
+    timeout=15,
+    headers={"User-Agent": "ctf-discord-poster/1.0 (github-actions)"},
+)
+
+if resp.status_code != 200:
+    raise RuntimeError(f"CTFtime API error: {resp.status_code}")
+
+try:
+    events = resp.json()
+except ValueError:
+    raise RuntimeError(f"Non-JSON response from CTFtime:\n{resp.text[:500]}")
 new_ids = set()
 
 for e in events:
