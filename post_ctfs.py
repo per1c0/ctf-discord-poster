@@ -2,6 +2,7 @@ import json
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
 import requests
 
@@ -9,6 +10,12 @@ CTFTIME_API = "https://ctftime.org/api/v1/events/"
 DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1462493741364543498/RbspM_RHJHKU2qQsNOYzcaXjuyxjLZQ4VICUeOv3nNHcDlT0evOCFM8YT1yXCLLWaLPA"
 
 STATE_FILE = Path("posted_ids.json")
+
+
+def human_utc(ts: str) -> str:
+    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    return dt.strftime("%b %d, %Y · %H:%M (UTC)")
+
 
 if not STATE_FILE.exists():
     STATE_FILE.write_text("[]")
@@ -49,16 +56,22 @@ for e in events:
         continue
 
     title = e["title"]
-    start = e["start"]
-    end = e["finish"]
-    url = e["url"]
+    start_raw = e["start"]
+    end_raw = e["finish"]
     format_ = e["format"]
+    url = e["url"]
+
+    # clean domain for Website field
+    parsed = urlparse(url)
+    domain = parsed.netloc or parsed.path
+    domain = domain.replace("www.", "")
 
     body = (
+        f"**{title}**\n\n"
         f"**Format:** {format_}\n"
-        f"**Start:** {start}\n"
-        f"**End:** {end}\n"
-        f"**CTFtime:** {url}\n\n"
+        f"**Start:** {human_utc(start_raw)}\n"
+        f"**End:** {human_utc(end_raw)}\n"
+        f"**Website:** {domain}\n\n"
         "🕒 **Availability**\n"
         "Comment below:\n"
         "- ✅ In\n"
